@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin</title>
+    <link rel="stylesheet" href="../../style/main.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.css"
+    />
+    <%- include('../layouts/headers.ejs') %> <%- include('../layouts/nav.ejs')
+    %>
+  </head>
+
+  <body>
+    <script
+      src="https://code.jquery.com/jquery-3.6.3.js"
+      integrity="sha256-nQLuAZGRRcILA+6dMBOvcRh5Pe310sBpanc6+QBmyVM="
+      crossorigin="anonymous"
+    ></script>
+    <div class="table-responsive">
+      <main class="form-signin w-75 m-auto">
+        <button
+          type="button"
+          class="btn btn-success mb-4"
+          data-bs-toggle="modal"
+          data-bs-target="#clientAddModal"
+        >
+          Agregar nuevo cliente <i class="bi bi-person-add"></i>
+        </button>
+        <table class="table table-hover align-middle border" id="clientTable">
+          <thead>
+            <tr>
+              <th scope="col">Id</th>
+              <th scope="col">Foto</th>
+
+              <th scope="col">Nombre de usuario</th>
+              <th scope="col">Email</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="justify-content-center">
+            <% clients.forEach(function(client){ %>
+            <tr>
+              <th scope="row"><%= client.id %></th>
+              <td>
+                <img src="<%= client.image? client.image :
+                "../../image/defaultAvatar.jpg " %> " id="avatar" alt=""
+                srcset="">
+              </td>
+
+              <td><%= client.username %></td>
+              <td><%= client.email %></td>
+              <td class="">
+                <button
+                  class="btn client-delete border border-1 ms-2 m-2 border-danger"
+                  value="<%= client.id %>"
+                  name="client-delete"
+                  title="Eliminar"
+                  id="client-delete"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+                <button
+                  class="btn client-update border border-1 ms-2 me-2 border-primary"
+                  value="<%= client.id %>"
+                  title="Actualizar"
+                  name="client-update"
+                  data-bs-toggle="modal"
+                  data-bs-target="#updateClient-modal"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <a href="../../admin/client/getBuy/<%= client.id %> ">
+                  <button
+                    type="button"
+                    class="btn border client-buy border-1 ms-2 me-2 admin-fact border-warning"
+                    title="Compras"
+                    name="client-buy"
+                    id="border-warning"
+                  >
+                    <i class="bi bi-basket"></i></button
+                ></a>
+              </td>
+            </tr>
+
+            <% }); %>
+          </tbody>
+        </table>
+      </main>
+    </div>
+  </body>
+
+  <div
+    class="modal fade"
+    id="clientAddModal"
+    tabindex="-1"
+    aria-labelledby="exampleModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">
+            Registrar cliente
+          </h1>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form
+            class="newAdmin"
+            id="newAdmin"
+            enctype="multipart/form-data"
+            novalidate
+          >
+            <div class="col-sm-12 messages" id="messages"></div>
+            <div class="form-floating mt-1">
+              <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                placeholder="Username"
+                required
+              />
+              <label for="floatingInput"
+                >Nombre de usuario <i class="bi bi-person"></i
+              ></label>
+            </div>
+
+            <div class="form-floating mt-1">
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="name@example.com"
+                required
+              />
+              <label for="floatingInput"
+                >Correo electronico <i class="bi bi-envelope-at"></i
+              ></label>
+            </div>
+            <div class="form-floating mt-1">
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder="Password"
+                required
+              />
+              <label for="floatingPassword"
+                >Contraseña <i class="bi bi-key"></i
+              ></label>
+            </div>
+
+            <div class="mt-1">
+              <input
+                multiple
+                type="file"
+                class="form-control"
+                name="file"
+                id="file"
+              />
+            </div>
+
+            <input type="hidden" value="client" name="rol" id="rol" />
+            <div class="modal-footer">
+              <button class="btn btn-success my-2" type="button" id="addClient">
+                Registrar <i class="bi bi-person-add"></i>
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger"
+                data-bs-dismiss="modal"
+              >
+                Cancelar <i class="bi bi-close"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="updateClient-modal"
+    tabindex="-1"
+    aria-labelledby="exampleModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">
+            Actualizar cliente
+          </h1>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            Si no desea actualizar la imagen o contraseña por favor dejelos
+            vacios
+          </div>
+          <div id="updateform"></div>
+          <div class="modal-footer">
+            <button
+              class="btn btn-success my-2"
+              type="button"
+              id="updateClient"
+              name="updateClient"
+            >
+              Actualizar <i class="bi bi-arrow-repeat"></i>
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              data-bs-dismiss="modal"
+            >
+              Cancelar <i class="bi bi-close"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</html>
+
+<script
+  type="text/javascript"
+  charset="utf8"
+  src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.js"
+></script>
+<script>
+  $(document).ready(function () {
+    $('#clientTable').DataTable({
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/es-ES.json',
+      },
+    });
+  });
+</script>
+<script src="../../js/clients/addClient.js"></script>
+<script src="../../js/clients/deleteClient.js"></script>
+<script src="../../js/clients/updateClient.js"></script>
