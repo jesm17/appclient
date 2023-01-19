@@ -2,28 +2,24 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
-import { ProductosModule } from './productos/productos.module';
-import { ComprasModule } from './compras/compras.module';
-import { AdminModule } from './admin/admin.module';
+
 import { MulterModule } from '@nestjs/platform-express';
+import { MongooseModule } from '@nestjs/mongoose';
+import { UserModule } from './user/user.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { ProductModule } from './product/product.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'root',
-      database: 'appclient',
-      entities: [__dirname + '/**/*.entity{.js, .ts}'],
-      synchronize: true,
-    }),
-    MulterModule.register({ dest: '.public/uploads' }),
+    MongooseModule.forRoot('mongodb://localhost/appclient'),
+    MulterModule.register({ dest: '.files/uploads' }),
     UserModule,
-    ProductosModule,
-    ComprasModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
+    ProductModule,
     AdminModule,
   ],
   controllers: [AppController],

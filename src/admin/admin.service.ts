@@ -1,96 +1,58 @@
-import { Injectable } from '@nestjs/common';
-import { UpdateAdminDto } from './dto/update-admin.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { User, UserDocument } from 'src/user/entities/user.schema';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
+
 @Injectable()
 export class AdminService {
-  constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(createAdminDto: CreateUserDto) {
-    const uniqueDataFound = await this.userRepository.findOne({
-      where: [
-        { email: createAdminDto.email },
-        { username: createAdminDto.username },
-      ],
+    const emailFound = await this.userModel.findOne({
+      email: createAdminDto.email,
     });
-
-    if (uniqueDataFound) {
-      return {
-        message: 'El correo o nombre de usuario ya se encuentra registrado',
-        status: 500,
-      };
+    const usernameFound = await this.userModel.findOne({
+      username: createAdminDto.username,
+    });
+    if (emailFound || usernameFound) {
+      return new HttpException(
+        'El email o nombre de usuario ya se encuentra registrado',
+        HttpStatus.CONFLICT,
+      );
     }
-    const saltOrRounds = 10;
-    const hash = await bcrypt.hash(createAdminDto.password, saltOrRounds);
-    createAdminDto.password = hash;
-    const newAdmin = await this.userRepository.create(createAdminDto);
-    this.userRepository.save(newAdmin);
-
-    return { message: 'Administrador creado', status: 200 };
+    const newAdmin = new this.userModel(createAdminDto);
+    newAdmin.save();
+    return {
+      message: 'Se registro el nuevo administrador',
+      status: HttpStatus.OK,
+    };
   }
 
-  async findAllAdmins() {
-    const admins = await this.userRepository.find({
-      where: { rol: 'admin' },
-    });
-
-    admins.forEach((admin) => {
-      delete admin.password;
+  async findAll() {
+    const admins = await this.userModel.find({
+      rol: 'admin',
     });
 
     return admins;
   }
 
-  async findOneAdmin(id: number) {
-    const admin = await this.userRepository.findOne({
-      where: { id: id, rol: 'admin' },
-    });
-    delete admin.password;
-    return admin;
+  findOne(id: string) {
+    return this.userModel.findById(id);
   }
 
-  async findOneClient(id: number) {
-    const client = await this.userRepository.findOne({
-      where: { id: id, rol: 'client' },
-    });
-    delete client.password;
-    return client;
+  async update(id: string, updateAdminDto: UpdateAdminDto) {
+    await this.userModel.findByIdAndUpdate(id, updateAdminDto);
+    return {
+      message: 'Administrador actualizado con exito',
+      status: HttpStatus.OK,
+    };
   }
 
-  async findBuysClienById(id: number) {
-    const clientBuys = await this.userRepository.find({
-      where: { id: id },
-      relations: ['compras'],
-    });
-    return clientBuys;
-  }
-
-  async update(id: number, updateAdminDto: UpdateAdminDto) {
-    if (updateAdminDto.password) {
-      const saltOrRounds = 10;
-      const hash = await bcrypt.hash(updateAdminDto.password, saltOrRounds);
-      updateAdminDto.password = hash;
-    }
-    const adminUpdate = await this.userRepository.update(id, updateAdminDto);
-    return { message: 'Se actualizo con exito', adminUpdate, status: 200 };
-  }
-
-  remove(id: number) {
-    this.userRepository.delete(id);
-    return { message: 'Usuario eliminado', status: 200 };
-  }
-
-  async findAllUsers() {
-    const users = await this.userRepository.find({ where: { rol: 'client' } });
-    users.forEach((user) => {
-      delete user.password;
-    });
-    return users;
+  async remove(id: string) {
+    await this.userModel.findByIdAndDelete(id);
+    return { message: 'Administrador eliminado', status: HttpStatus.OK };
   }
 }

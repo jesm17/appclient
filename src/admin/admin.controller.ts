@@ -4,135 +4,52 @@ import {
   Post,
   Body,
   Patch,
-  Put,
   Param,
   Delete,
-  ParseIntPipe,
+  Put,
 } from '@nestjs/common';
-import { AdminService } from './admin.service';
-
-import { UpdateAdminDto } from './dto/update-admin.dto';
-import {
-  Render,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common/decorators';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { editFileName } from 'src/utils/file-upload.utils';
+import { AdminService } from './admin.service';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
+import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './public/uploads/admin',
-        filename: editFileName,
-      }),
-    }),
-  )
-  async create(@Body() createAdminDto: CreateUserDto, @UploadedFile() file) {
-    const response = { originalname: '', filename: '' };
-    if (file) {
-      response.originalname = file.originalname;
-      response.filename = file.filename;
-
-      createAdminDto.image = '/uploads/admin/' + response.filename;
-    }
-
-    const message = await this.adminService.create(createAdminDto);
-    return message;
+  create(@Body() createAdminDto: CreateUserDto) {
+    createAdminDto.rol = 'admin';
+    const hash = bcrypt.hashSync(createAdminDto.password, 10);
+    createAdminDto.password = hash;
+    return this.adminService.create(createAdminDto);
   }
 
   @Get()
-  @Render('admin/admin_view')
-  async mainview() {
-    const admins = await this.adminService.findAllAdmins();
-
-    return { admins, message: null };
+  findAll() {
+    return this.adminService.findAll();
   }
 
-  @Get('/client/get/:id')
-  async getOneClient(@Param('id', ParseIntPipe) id: number) {
-    const client = await this.adminService.findOneClient(id);
-    return client;
-  }
-
-  @Get('client/getBuy/:id')
-  @Render('admin/compras')
-  async getView(@Param('id', ParseIntPipe) id: number) {
-    return { id };
-  }
-
-  @Get('client/getBuy-dateils/:id')
-  getDeatils(@Param('id', ParseIntPipe) id: number) {
-    return this.adminService.findBuysClienById(id);
-  }
-  
-  @Get('get/:id')
-  async findOneAdmin(@Param('id', ParseIntPipe) id: number) {
-    const admin = await this.adminService.findOneAdmin(id);
-
-    return admin;
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.adminService.findOne(id);
   }
 
   @Put(':id')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './public/uploads/admin',
-        filename: editFileName,
-      }),
-    }),
-  )
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateAdminDto: UpdateAdminDto,
-    @UploadedFile() file,
-  ) {
-    const response = { originalname: '', filename: '' };
-    if (file) {
-      response.originalname = file.originalname;
-      response.filename = file.filename;
-
-      updateAdminDto.image = '/uploads/admin/' + response.filename;
+  update(@Param('id') id: string, @Body() updateAdminDto: UpdateUserDto) {
+    if (updateAdminDto.password) {
+      const hash = bcrypt.hashSync(updateAdminDto.password, 10);
+      updateAdminDto.password = hash;
     } else {
-      delete updateAdminDto.image;
-    }
-    if (!updateAdminDto.password) {
       delete updateAdminDto.password;
     }
-    if (
-      updateAdminDto.password != undefined &&
-      updateAdminDto.password.length <= 8
-    ) {
-      return {
-        message: 'La contraseña debe de tener almenos 8 caracteres',
-        status: 500,
-      };
-    }
 
-    return await this.adminService.update(id, updateAdminDto);
+    return this.adminService.update(id, updateAdminDto);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id') id: string) {
     return this.adminService.remove(id);
-  }
-
-  @Get('clients')
-  @Render('admin/admin_view_clients')
-  async getUsers() {
-    const clients = await this.adminService.findAllUsers();
-    return { clients };
-  }
-
-  @Post('addClient')
-  addCliet(@Body() createAdminDto: any) {
-    console.log(createAdminDto);
-    return createAdminDto;
   }
 }
